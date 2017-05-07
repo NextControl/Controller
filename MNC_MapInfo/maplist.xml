@@ -1,0 +1,300 @@
+﻿<frame id="main" z-index="210">
+  <label id="NextPage" pos="60 -65" z-index="0" size="10 10" text="" halign="center" valign="center2" textcolor="fff" textfont="OswaldMono" textsize="6" textemboss="1"
+         scriptevents="1" focusareacolor1="00060800" focusareacolor2="000000FF"/>
+  <label id="PrevPage" pos="70 -65" z-index="0" size="10 10" text="" halign="center" valign="center2" textcolor="fff" textfont="OswaldMono" textsize="6" textemboss="1"
+         scriptevents="1" focusareacolor1="00060800" focusareacolor2="000000FF"/>
+  <label id="CurrentPage" pos="50 -65" z-index="0" size="10 10" text="" halign="right" valign="center2" textcolor="fff" textfont="OswaldMono" textsize="6" textemboss="1"/>
+  <frame id="list" z-index="1" clip="1" clippos="0 0" clipsizen="150 110">
+    <frame id="scrollframe">
+      %FrameInstances
+    </frame>
+  </frame>
+  <quad id="scrollbarbg" pos="77 0" z-index="1" size="1.75 110" bgcolor="000" opacity="0.4" halign="center" valign="center" scriptevents="1"/>
+  <quad id="scrollbar" pos="77 55" z-index="2" size="1.75 10" bgcolor="fff" opacity="1" halign="center" valign="center" scriptevents="1"/>
+</frame>
+
+<framemodel id="view">
+  <quad  id="background" size="150 10" z-index="-1" halign="center" valign="center" bgcolor="000" opacity="0.1" />
+  <quad  id="selectmap" pos="-75" size="125 10" z-index="-5" halign="left" valign="center" bgcolor="00000AAA" opacity="0" scriptevents="1" />
+  <label id="juke" pos="70" size="7.5 7.5" z-index="1" halign="center" valign="center" bgcolor="fff" text="" textemboss="1" scriptevents="1" focusareacolor1="00060800" focusareacolor2="000000FF" />
+  <label pos="62.5" size="7.5 7.5" z-index="1" halign="center" valign="center" bgcolor="fff" text="" textemboss="1" scriptevents="1" focusareacolor1="00060800" focusareacolor2="000000FF" />
+  <label pos="55" size="7.5 7.5" z-index="1" halign="center" valign="center" bgcolor="fff" text="" textemboss="1" scriptevents="1" focusareacolor1="00060800" focusareacolor2="000000FF" />
+  <label id="mapname" pos="-65" z-index="1" halign="left" valign="center" bgcolor="fff" text="Loading map..." textfont="OswaldMono" textemboss="1" />
+  <label pos="-70" z-index="1" halign="center" valign="center" bgcolor="fff" text="" textemboss="1" />
+  <quad  pos="50" size="0.5 7.5" z-index="-1" halign="center" valign="center" bgcolor="fff" opacity="0.75" />
+</framemodel>
+<script>
+  <!-- 
+  #Include "MathLib" as MathLib
+  
+  #Const C_ChunkLength 50
+
+  declare CMlFrame MainFrame;
+  declare CMlFrame ScrollFrame;
+  declare CMlFrame[Integer] viewInstances;
+  declare Boolean LoadingList;
+  declare Integer CurrentPage;
+  declare Integer MaxPages;
+
+  Void ProYield()
+  {
+    yield;
+  }
+
+  Void ProSleep(Integer duration)
+  {
+    declare start = Now + duration;
+    while(start > Now)
+      ProYield();
+  }
+
+  Void RefreshInstancesCount()
+  {
+    declare Text[Text][Integer] @GS_Maps;
+    declare Boolean @GS_RefreshMapList = False;
+    
+    if (viewInstances.count != %GS_Maps.count)
+    {
+      declare i_start = viewInstances.count - 1;
+      declare i_end = %GS_Maps.count - 1;
+      if (i_start < 0)
+        i_start = 0;
+      if (i_end < 0)
+        i_end = 0;
+      if (%GS_Maps.count > viewInstances.count)
+      {       
+        for (i, i_start, i_end)
+        { 
+          
+          viewInstances[i] <=> (Page.GetFirstChild("view_" ^ i) as CMlFrame);
+          if (viewInstances[i] == Null)
+            continue;
+          
+          viewInstances[i].Show();
+          
+          declare label_MapName for viewInstances[i] <=> (viewInstances[i].GetFirstChild("mapname") as CMlLabel);
+          declare focusQuad for viewInstances[i] <=> (viewInstances[i].GetFirstChild("selectmap") as CMlQuad);
+          declare jukeQuad for viewInstances[i] <=> (viewInstances[i].GetFirstChild("juke") as CMlLabel);
+          { declare mapUId for focusQuad = ""; }
+          { declare mapUId for jukeQuad = ""; }
+          
+          label_MapName.SetText("Loading");
+        }
+      }
+      else
+      {
+        for (i, i_end, i_start)
+        {
+          viewInstances[i].Hide();
+          viewInstances.remove(viewInstances[i]);
+        }
+      }
+    }
+  }
+
+  Void UpdateMapList()
+  {
+    declare LabelCurrentPage <=> (Page.GetFirstChild("CurrentPage") as CMlLabel);
+    
+    declare Text[Text][Integer] @GS_Maps;
+    declare Boolean @GS_RefreshMapList = False;
+    %GS_RefreshMapList = False;
+  
+    %GS_RefreshMapList = False;
+    LoadingList = False;
+    
+    // update chunk by chunks
+    declare chunkPartDone = 0;
+    declare index = 0;
+    
+    MaxPages = MathLib::FloorInteger((%GS_Maps.count + 0.) / 50.); 
+    if (CurrentPage < 0)
+      CurrentPage = MaxPages;
+    if (CurrentPage > MaxPages)
+      CurrentPage = 0;
+      
+    LabelCurrentPage.SetText(CurrentPage + 1 ^ "/" ^ MaxPages + 1);
+    
+    // Refresh instances count
+    RefreshInstancesCount();
+    
+    declare startIndex = CurrentPage * 50;
+    /*if (startIndex != 0)
+      startIndex -= 1;*/
+    
+    declare mapIndex = startIndex;
+
+    while(True)
+    {
+      if (index >= viewInstances.count
+        || !viewInstances.existskey(index) 
+        || viewInstances[index] == Null)
+        break;
+      
+      declare frame = viewInstances[index];
+      declare CMlLabel label_MapName for frame;
+      declare CMlQuad focusQuad for frame; 
+      declare CMlLabel jukeQuad for frame;
+      if (mapIndex >= %GS_Maps.count)
+      {
+        frame.Hide();
+      }
+      else
+      {
+        frame.Show();
+        
+        {
+          declare mapUId for focusQuad = "";
+          mapUId = %GS_Maps[mapIndex]["UId"];         
+        }
+        {
+          declare mapUId for jukeQuad = "";
+          mapUId = %GS_Maps[mapIndex]["UId"];         
+        }
+        label_MapName.SetText(%GS_Maps[mapIndex]["Name"]);
+        
+        declare frameBg <=> (frame.GetFirstChild("background") as CMlQuad);
+        if (index % 2 == 0)
+          frameBg.Opacity = 0.125;
+        else
+          frameBg.Opacity = 0.;
+      }
+      
+      if (chunkPartDone >= C_ChunkLength)
+      {
+        chunkPartDone = 0;
+        ProSleep(10);
+      }
+      
+      chunkPartDone += 1;
+      index += 1;
+      mapIndex += 1;
+    }
+  }
+  
+	Real Lerp(Real a, Real b, Real t)
+	{
+		return a * (1 - t) + b * t;
+	}
+
+  main()
+  {
+    MainFrame <=> (Page.GetFirstChild("main") as CMlFrame);
+    ScrollFrame <=> (Page.GetFirstChild("scrollframe") as CMlFrame);
+    
+    declare MNC_MapInfo_SelectedWindow for LocalUser = 0;
+    MainFrame.Visible = MNC_MapInfo_SelectedWindow == 2;
+    
+    declare Text[Text][Integer] @GS_Maps;
+    declare Boolean @GS_RefreshMapList = False;
+    
+    declare MNC_MapInfo_SelectedUId for LocalUser = "";
+    
+    LoadingList = False;
+    
+    //file://Thumbnails/MapUid/[uid]
+    if (%GS_Maps.count > 0)
+      UpdateMapList();
+    else
+      LoadingList = True;
+      
+    declare ScrollBarReal = 0.;
+    declare ScrollBarBG <=> (Page.GetFirstChild("scrollbarbg") as CMlQuad);
+    declare ScrollBar <=> (Page.GetFirstChild("scrollbar") as CMlQuad);
+    
+    declare TimeDelta = 0.;
+    declare lastTimeDelta = Now;
+     
+    while(True)
+    {
+      TimeDelta = (Now - lastTimeDelta) / 1000.;
+      lastTimeDelta = Now;
+    
+      MainFrame.Visible = MNC_MapInfo_SelectedWindow == 2;
+      
+      if (!MainFrame.Visible)
+      { yield; continue; }
+    
+      if (%GS_RefreshMapList)
+      {
+        %GS_RefreshMapList = False;
+        LoadingList = False;
+        UpdateMapList();
+      }
+      
+      log(ScrollBarReal);
+      //ScrollFrame.RelativePosition_V3.Y = -(ScrollBarReal * 110 * (C_ChunkLength / 11)) + (110 * (C_ChunkLength / 11));
+      ScrollFrame.RelativePosition_V3.Y = ScrollBarReal * 55 * (C_ChunkLength / 7.05);
+      
+      foreach (frame in viewInstances)
+      { 
+        if (frame == Null)
+          continue;
+          
+        declare CMlQuad focusQuad for frame;
+        if (focusQuad.IsFocused)
+          focusQuad.Opacity = 1.;
+        else
+          focusQuad.Opacity = 0.;
+      }
+      
+      foreach (event in PendingEvents)
+      {
+        if (event.Type == CMlScriptEvent::Type::MouseClick)
+        {
+          if (event.ControlId == "NextPage"
+            || event.ControlId == "PrevPage")
+          {
+            ScrollBarReal = 0.;
+            ScrollBar.RelativePosition_V3.Y = 55.;
+            if (event.ControlId == "NextPage")
+              CurrentPage += 1;
+            else
+              CurrentPage -= 1;
+              
+            UpdateMapList();
+          }
+          
+          if (event.ControlId == "selectmap")
+          {
+            declare mapUId for event.Control = "";
+            MNC_MapInfo_SelectedUId = mapUId;
+            MNC_MapInfo_SelectedWindow = 1;
+            TriggerPageAction("mnc_mapinfo|selectmapuid|" ^ mapUId);
+          }
+          if (event.ControlId == "juke")
+          {
+            declare mapUId for event.Control = "";  
+            TriggerPageAction("mnc_mapinfo|juke|" ^ mapUId);
+          }
+        }
+      }
+      
+      if ((ScrollBarBG.IsFocused || ScrollBar.IsFocused)
+        && MouseLeftButton)
+      {
+        if (ScrollBar.IsFocused)
+          ScrollBar.RelativeScale = 3.;
+        else
+          ScrollBar.RelativeScale = 1.;
+      
+        //ScrollBarReal = MathLib::Clamp(MouseY, -55., 55.);
+        declare posx = MouseY - 70.;
+        posx += 90;
+        ScrollBarReal = MouseY / 110.;
+        ScrollBarReal += 0.5;
+        ScrollBarReal = 1 - ScrollBarReal;
+        
+        ScrollBar.RelativePosition_V3.Y = MathLib::Clamp(MouseY, -55., 55.);
+      }
+      else
+      {
+        ScrollBar.RelativeScale = 1.;
+        ScrollBarReal = Lerp(ScrollBarReal, MathLib::Clamp(ScrollBarReal, 0., 1.), TimeDelta * 10);
+      }
+    
+      ProYield();
+    }
+  }
+-->
+</script>

@@ -1,0 +1,12 @@
+﻿<script>
+    <!--
+  main()
+  {
+    declare MNC_ScoresTableVisible for LocalUser = False;
+    while(True)
+    {
+      yield;
+      MNC_ScoresTableVisible = PageIsVisible;
+    }
+  }
+--></script>

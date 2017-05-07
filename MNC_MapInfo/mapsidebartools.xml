@@ -1,0 +1,229 @@
+﻿<label id="mouse" text="$s" pos="120 80" z-index="1000" scale="1.5" />
+<frame id="main" z-index="200">
+  <frame pos="0 0" z-index="-1">
+    <label pos="75 60" z-index="0" size="40 10" text="Playlists" translate="1" textcolor="fff" halign="right" valign="bottom" textfont="OswaldMono" textsize="8" textemboss="1"/>
+    <label pos="-80 59" z-index="0" size="5 5" text="" halign="center" valign="center2" textcolor="FFFFFFFF" scriptevents="1" id="close" focusareacolor1="00060800" focusareacolor2="000000FF" textemboss="1"/>
+    <quad pos="-75 0" z-index="1" size="0.5 110" bgcolor="FFFF" halign="center" valign="center"/>
+    <frame>
+      <quad pos="0 58" z-index="1" size="150 1" bgcolor="FFFF" halign="center" valign="center"/>
+      <quad pos="-75 59" z-index="1" size="15 1" bgcolor="FFFF" halign="left" valign="center"/>
+    </frame>
+    <quad pos="0 0" z-index="-100" size="150 110" bgcolor="4B93B577" halign="center" valign="center"/>
+    <quad pos="0 0" z-index="-100" size="150 110" style="Bgs1" substyle="BgEmpty" halign="center" valign="center"/>
+    <quad pos="0 0" z-index="-100" size="322 182" halign="center"  valign="center" image="file://Media/Manialinks/Nadeo/Common/ScoresTable/Dimmer.dds" />
+    
+    <label id="loadtext" pos="-60 -65" z-index="0" size="60 10" text="0/0 Totaly loaded" halign="left" valign="center2" textfont="OswaldMono" textsize="6" textemboss="1"/>
+     <label id="loadtext" pos="-70 -65" z-index="0" size="10 10" text="" halign="center" valign="center2" textfont="OswaldMono" textsize="6" textemboss="1"/>
+
+    <frame id="selectionlist" pos="0 50" z-index="-1">
+      <frameinstance modelid="focusbutton" pos="-95 0"    id="mappreview"/>
+      <frameinstance modelid="focusbutton" pos="-95 -10"  id="playlist" />
+      <frameinstance modelid="focusbutton" pos="-95 -20"  id="mx" />
+    </frame>
+  </frame>
+</frame>
+
+<framemodel id="focusbutton">
+  <!-- Selector deco start [ -->
+  <quad id="topfocus" pos="-15 5" z-index="1" size="10 0.5" bgcolor="FFFF" halign="left" valign="top"/>
+  <quad pos="-15 5" z-index="1" size="0.5 10" bgcolor="FFFF" halign="left" valign="top"/>
+  <quad id="bottomfocus" pos="-15 -5" z-index="1" size="10 0.5" bgcolor="FFFF" halign="left" valign="top"/>
+  <!-- Selector deco end -->
+  <!-- Selected deco start -->
+  <frame id="selected">
+    <quad pos="0 -5" size="30 5" style="Bgs1InRace" substyle="BgGradBottom" halign="center" valign="bottom" />
+    <quad pos="0 5" size="30 5" style="Bgs1InRace" substyle="BgGradTop" halign="center" valign="top" />
+    <quad pos="-15" size="10 10" style="Bgs1InRace" substyle="BgGradLeft" halign="left" valign="center" />
+    <quad pos="15" size="10 10" style="Bgs1InRace" substyle="BgGradRight" halign="right" valign="center" />
+  </frame>
+  <!-- Selected deco end -->
+  <quad pos="0 0" z-index="-1" size="30 10" bgcolor="4B93B577" halign="center" valign="center"/>
+  <label id="buttonname" pos="0 0" z-index="1" text="Playlist" halign="center" valign="center" textfont="OswaldMono" textemboss="1" />
+  <quad id="buttonactivator" pos="0 0" z-index="2" size="30 10" opacity="0." scriptevents="1" halign="center" valign="center"/>
+</framemodel>
+
+<script>
+        <!--
+  declare CMlFrame[Integer] ButtonFrames;
+  declare CMlFrame MainFrame;
+
+  Void InitFrames()
+  {
+    foreach (i => frame in ButtonFrames)
+    {
+      declare label_ButtonName for frame <=> (frame.GetFirstChild("buttonname") as CMlLabel);
+      declare quads_Focus for frame = [(frame.GetFirstChild("topfocus") as CMlQuad), (frame.GetFirstChild("bottomfocus") as CMlQuad)];
+      declare frame_Selected for frame <=> (frame.GetFirstChild("selected") as CMlFrame);
+      declare button_activator for frame <=> (frame.GetFirstChild("buttonactivator") as CMlQuad);
+      declare SelectState for frame = 0;
+      SelectState = 0;
+      
+      declare parentframe for button_activator <=> frame;
+      parentframe <=> frame;
+      
+      if (i == 1)
+        label_ButtonName.SetText("Map Info");
+      if (i == 2)
+        label_ButtonName.SetText("Playlist");
+      if (i == 3)
+        label_ButtonName.SetText("ManiaExchange");
+    }
+  }
+  
+  Void SetSelectedFrame(Integer index)
+  {
+    foreach (i => frame in ButtonFrames)
+    {
+      if (i == index)
+        continue;
+        
+      declare SelectState for frame = 0;
+      SelectState = 0;
+    }
+  
+    declare SelectState for ButtonFrames[index] = 0;
+    SelectState = 1;
+  }
+  
+  Void UnfocusAllFrames()
+  {
+    foreach (frame in ButtonFrames)
+    {
+      declare SelectState for frame = 0;
+      if (SelectState != 1)
+        SelectState = 0;
+    }
+  }
+  
+  Void SetFocusedFrame(Integer index)
+  {
+    foreach (i => frame in ButtonFrames)
+    {
+      if (i == index)
+        continue;
+        
+      declare SelectState for frame = 0;
+      if (SelectState != 1)
+        SelectState = 0;
+    }
+  
+    declare SelectState for ButtonFrames[index] = 0;
+    if (SelectState != 1)
+      SelectState = 2;
+  }
+  
+	Real Lerp(Real a, Real b, Real t)
+	{
+		return a * (1 - t) + b * t;
+	}
+
+  main()
+  {
+    MainFrame <=> (Page.GetFirstChild("main") as CMlFrame);
+    ButtonFrames = 
+    [
+      1 => (Page.GetFirstChild("mappreview") as CMlFrame),
+      2 => (Page.GetFirstChild("playlist") as CMlFrame),
+      3 => (Page.GetFirstChild("mx") as CMlFrame)
+    ];
+    
+    InitFrames();
+    
+    declare LoadText <=> (Page.GetFirstChild("loadtext") as CMlLabel);
+    declare MouseQuad <=> (Page.GetFirstChild("mouse") as CMlLabel);
+    
+    declare TimeDelta = 0.;
+    declare lastTimeDelta = Now;
+    
+    declare MNC_MapInfo_SelectedWindow for LocalUser = 0;
+    declare lastSelection = 0;
+    
+    declare @GS_LoadedMaps = 0;
+    declare @GS_MapCount = 0;
+    
+    declare Integer NC_EnvironnementTick for LocalUser;
+    declare NC_lastTickTime = 0;
+    declare lastLoadedCount = 0;
+    
+    AnimMgr.Add(MouseQuad, """<label scale="2"/>""", Now + 0, 1000, CAnimManager::EAnimManagerEasing::ElasticIn);
+    AnimMgr.AddChain(MouseQuad, """<label opacity="0"/>""", 1000, CAnimManager::EAnimManagerEasing::Linear);
+    
+    while(True)
+    {
+    
+      TimeDelta = (Now - lastTimeDelta) / 1000.;
+      lastTimeDelta = Now;
+      
+      if (MouseQuad.Opacity > -1.)
+      MouseQuad.Opacity -= 0.008;
+      
+      if (NC_EnvironnementTick > NC_lastTickTime
+        && %GS_LoadedMaps != lastLoadedCount)
+      {
+        lastLoadedCount = %GS_LoadedMaps;
+        NC_lastTickTime = NC_EnvironnementTick;
+      }
+      LoadText.SetText(lastLoadedCount ^ "/" ^ %GS_MapCount ^ " Maps totally loaded.");
+    
+      foreach (event in PendingEvents)
+      {
+        if (event.Type == CMlScriptEvent::Type::MouseOver)
+        {
+          declare CMlFrame parentframe for event.Control;
+          if (parentframe != Null && ButtonFrames.exists(parentframe))
+          {
+            SetFocusedFrame(ButtonFrames.keyof(parentframe));           
+          }
+        }
+        if (event.Type == CMlScriptEvent::Type::MouseClick)
+        {
+          declare CMlFrame parentframe for event.Control;
+          if (parentframe != Null && ButtonFrames.exists(parentframe))
+          {
+            declare index = ButtonFrames.keyof(parentframe);        
+            MNC_MapInfo_SelectedWindow = index;
+          }
+          if (event.ControlId == "close")
+          {
+            MNC_MapInfo_SelectedWindow = 0;
+          }
+        }
+        if (event.Type == CMlScriptEvent::Type::MouseOut)
+        {
+          UnfocusAllFrames();
+        }
+      }
+      
+      if (MNC_MapInfo_SelectedWindow != lastSelection)
+      {
+        lastSelection = MNC_MapInfo_SelectedWindow;
+        if (lastSelection != 0)
+          SetSelectedFrame(MNC_MapInfo_SelectedWindow);
+      }
+    
+      foreach (i => frame in ButtonFrames)
+      {
+        declare CMlQuad[] quads_Focus for frame;
+        declare CMlFrame frame_Selected for frame;
+        
+        declare SelectState for frame = 0;
+        declare focusLinesSizeX = 0.;
+        if (SelectState == 2)
+          focusLinesSizeX = 5.;
+        if (SelectState == 1)
+          focusLinesSizeX = 30.;
+          
+        frame_Selected.Visible = SelectState == 1;
+        
+        foreach (quad in quads_Focus)
+        {
+          quad.Size = <Lerp(quad.Size.X, focusLinesSizeX, TimeDelta * 12), 0.5>;
+        }
+      }
+      
+      MainFrame.Visible = MNC_MapInfo_SelectedWindow != 0;
+        
+      yield;
+    }
+  }
+--></script>

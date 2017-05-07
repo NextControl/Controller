@@ -1,0 +1,139 @@
+﻿<frame id="main" z-index="210">
+  <frame id="list">
+    <label pos="-60 40" z-index="-2" size="20 20" bgcolor="000000FF" text="" halign="center" valign="center" textsize="8"/>
+    <quad id="map_thumbnail" pos="-70 50" z-index="-1" size="20 20" />
+    <frame pos="-40 45" id="frame_mapname" z-index="1">
+      <label id="label_mapname" z-index="1" size="110 10" text="Map Name" valign="center2" halign="left" textfont="Oswald" textsize="6"/>
+      <label pos="-5" z-index="1" size="10 10" valign="center2" halign="center" textsize="6" text=""/>
+    </frame>
+    <frame pos="-40 35" id="frame_mapauthor" z-index="1">
+      <label id="label_authorname" z-index="1" size="110 10" text="Author Name" valign="center2" halign="left" textfont="Oswald" textsize="5" textprefix="By "/>
+      <label pos="-5" z-index="1" size="10 10" valign="center2" halign="center" textsize="4.5" text=""/>
+    </frame>
+    <frame z-index="1">
+      <quad pos="-70 50" z-index="0" size="5 0.5" bgcolor="FFF"/>
+      <quad pos="-70 50" z-index="0" size="0.5 5" bgcolor="FFF"/>
+      <quad pos="-55 30" z-index="0" size="5 0.5" bgcolor="FFF"/>
+      <quad pos="-50 34.5" z-index="0" size="0.5 5" bgcolor="FFF"/>
+    </frame>
+    <frame z-index="1">
+      <quad pos="-70 25" z-index="-1" size="140 10" bgcolor="0b081b" opacity="0.8"/>
+      <frame id="deco">
+        <quad  pos="-70 25" size="2.5 2.5" image="file://Media/Manialinks/Nadeo/Common/ScoresTable/HeaderCorner.dds" colorize="fff"/>
+        <quad  pos="70 25" size="2.5 2.5" image="file://Media/Manialinks/Nadeo/Common/ScoresTable/HeaderCorner.dds" colorize="fff" rot="90"/>
+        <quad  pos="-70 15" size="2.5 2.5" image="file://Media/Manialinks/Nadeo/Common/ScoresTable/HeaderCorner.dds" colorize="fff" rot="270"/>
+        <quad  pos="70 15" size="2.5 2.5" image="file://Media/Manialinks/Nadeo/Common/ScoresTable/HeaderCorner.dds" colorize="fff" rot="180"/>
+      </frame>
+    </frame>
+    <frame pos="-70 10" id="map_description" z-index="1">
+      <quad z-index="-1" size="140 30" bgcolor="00000030"/>
+      <label pos="5 -5" z-index="0" size="10 10" text="" halign="center" valign="center2" textemboss="1"/>
+      <textedit id="label_mapdesc" pos="10 0" z-index="0" size="130 30" default="" autonewline="1" textfont="file://Media/Font/BiryaniDemiBold.Font.gbx" textsize="2" focusareacolor1="00000000" focusareacolor2="00000012" scriptevents="0"/>
+    </frame>
+  </frame>
+  <frame id="loadingframe" z-index="10">
+    <quad pos="0 0" z-index="-100" size="150 110" bgcolor="000" opacity="0.5" halign="center" valign="center"/>
+    <label id="rotatingIcon" pos="0 10" text="" textsize="10" halign="center" valign="center" />
+    <label id="loadingtext" pos="0 -2.5" text="Loading..." textsize="5" halign="center" valign="center" />
+  </frame>
+</frame>
+
+<script>
+  <!--
+  declare CMlFrame MainFrame;
+  
+	Real Lerp(Real a, Real b, Real t)
+	{
+		return a * (1 - t) + b * t;
+	}
+  
+  main()
+  {
+    MainFrame <=> (Page.GetFirstChild("main") as CMlFrame);
+    declare MNC_MapInfo_SelectedWindow for LocalUser = 0;
+    MainFrame.Visible = MNC_MapInfo_SelectedWindow == 1;
+    
+    declare LabelMapName <=> (Page.GetFirstChild("label_mapname") as CMlLabel);
+    declare LabelMapAuthorName <=> (Page.GetFirstChild("label_authorname") as CMlLabel);
+    declare LabelMapDesc <=> (Page.GetFirstChild("label_mapdesc") as CMlTextEdit);
+    declare QuadMapThumbnail <=> (Page.GetFirstChild("map_thumbnail") as CMlQuad);
+    
+    declare FrameDescription <=> (Page.GetFirstChild("map_description") as CMlLabel);
+    
+    declare LoadingFrame <=> (Page.GetFirstChild("loadingframe") as CMlFrame);
+    declare Loading_Text <=> (Page.GetFirstChild("loadingtext") as CMlLabel);
+    declare Loading_Icon <=> (Page.GetFirstChild("rotatingIcon") as CMlLabel);
+    
+    declare @GS_MapInfo = ["UId" => ""];
+    declare Text MNC_MapInfo_SelectedUId for LocalUser = "";
+    
+    declare Real loading_rotation = 0.;
+    
+      declare TimeDelta = 0.;
+    declare lastTimeDelta = Now;
+  
+    while(True)
+    {
+      TimeDelta = (Now - lastTimeDelta) / 1000.;
+      lastTimeDelta = Now;
+    
+      MainFrame.Visible = MNC_MapInfo_SelectedWindow == 1;
+      
+      if (!MainFrame.Visible)
+      { yield; continue; }
+      
+      if (loading_rotation > 720)
+        loading_rotation = 0.;
+      
+      loading_rotation += 1.;
+    
+      if (%GS_MapInfo["UId"] == MNC_MapInfo_SelectedUId
+      && MNC_MapInfo_SelectedUId != "")
+      {
+        LoadingFrame.Hide();
+      
+        QuadMapThumbnail.ImageUrl = ("file://Thumbnails/MapUid/" ^ MNC_MapInfo_SelectedUId);
+        
+        LabelMapName.SetText(%GS_MapInfo["Name"]);
+        LabelMapAuthorName.SetText(%GS_MapInfo["Author"]);
+        if (Playground.Map.MapInfo.MapUid != MNC_MapInfo_SelectedUId)
+          LabelMapDesc.Value = "Local map. Can't get comments.\nTODO: Get comments trought GBX file";
+        else
+          LabelMapDesc.Value = Playground.Map.MapInfo.Comments;
+      }
+      else
+      {
+        LoadingFrame.Show();
+        
+        if (MNC_MapInfo_SelectedUId != "")
+        {
+          if (%GS_MapInfo["UId"] != "error")
+          {
+            Loading_Text.SetText("Fetching informations from controller...");
+            //Loading_Icon.RelativeRotation = Lerp(Loading_Icon.RelativeRotation, loading_rotation, TimeDelta * 10.);
+            Loading_Icon.RelativeRotation = loading_rotation;
+            Loading_Icon.SetText("");
+          }
+          else
+          {
+            Loading_Text.SetText("SelectedUId is null, please select another map.");
+            Loading_Icon.RelativeRotation = Lerp(Loading_Icon.RelativeRotation, 0., TimeDelta * 5.);
+            Loading_Icon.SetText("");
+          }
+        }
+        else
+        {
+          Loading_Text.SetText("SelectedUId is null, please select another map.");
+          Loading_Icon.SetText("");
+          Loading_Icon.RelativeRotation = Lerp(Loading_Icon.RelativeRotation, 0., TimeDelta * 5.);
+        }
+      }
+      
+
+      FrameDescription.Visible = LabelMapDesc.Value != "";
+    
+      yield;
+    }
+  }
+  -->
+</script>

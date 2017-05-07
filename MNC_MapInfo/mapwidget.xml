@@ -1,0 +1,167 @@
+﻿<frame id="main">
+  <quad id="backgroundfocus" pos="140 75" z-index="-1" sizen="70 25" halign="center" valign="center" bgcolor="000" opacity="0.25"/>
+  <quad pos="135 75" z-index="0" id="quad_switchtobuttons" sizen="60 20" opacity="0" halign="center" valign="center" scriptevents="1"/>
+  <frame pos="150 75" id="frame_currentmapinfo">
+    <label pos="-2.5 5" z-index="0" size="40 10" text="Map" id="label_mapname" textcolor="FFFF" halign="right" valign="center2" textfont="OswaldMono" textsize="6" textemboss="1"/>
+    <label pos="-2.5 -5" z-index="0" size="40 10" text="Author" id="label_mapauthor" textcolor="FFFF" halign="right" valign="center2" textfont="OswaldMono" textsize="4" textemboss="1"/>
+    <quad pos="0 0" z-index="1" size="0.75 20" bgcolor="FFFF" halign="center" valign="center"/>
+
+    <label pos="5 5" z-index="0" size="40 10" text="" textcolor="FFFF" halign="center" valign="center2" textfont="OswaldMono" textsize="4" textemboss="1"/>
+    <label pos="5 -5" z-index="0" size="40 10" text="" textcolor="FFFF" halign="center" valign="center2" textfont="OswaldMono" textsize="4" textemboss="1"/>
+  </frame>
+</frame>
+<frame pos="150 75" z-index="1000" id="frame_maptimes">
+  <label pos="-2.5 5" z-index="0" size="40 10" text="00:00.00" id="label_mapname" textcolor="FFFF" halign="right" valign="center2" textfont="OswaldMono" textsize="6" textemboss="1"/>
+  <label pos="-2.5 -5" z-index="0" size="40 10" text="Race" id="label_mapauthor" textcolor="FFFF" halign="right" valign="center2" textfont="OswaldMono" textsize="4" textemboss="1"/>
+  <quad pos="0 0" z-index="1" size="0.75 20" bgcolor="FFFF" halign="center" valign="center"/>
+
+  <label pos="5 5" z-index="0" size="40 10" text="⏱" textcolor="FFFF" halign="center" valign="center2" textfont="OswaldMono" textsize="4" textemboss="1"/>
+  <label pos="5 -5" z-index="0" size="40 10" text="" textcolor="FFFF" halign="center" valign="center2" textfont="OswaldMono" textsize="4" textemboss="1"/>
+</frame>
+<frame pos="150 75" z-index="1100" id="frame_buttonlist">
+  <frameinstance pos="-15 6" modelid="focusbutton" id="morecurrentmapinfo" />
+  <frameinstance pos="-15 0" modelid="focusbutton" id="showplaylist" />
+  <frameinstance pos="-15 -6" modelid="focusbutton" id="showmx" />
+</frame>
+
+<framemodel id="focusbutton">
+  <quad  id="button" size="40 5" z-index="500" style="Bgs1" substyle="BgDialogBlur" halign="center" valign="center" scriptevents="1" />
+  <quad  id="focus" size="40 5" z-index="500" style="Bgs1" substyle="BgDialogBlur" halign="center" valign="center" />
+  <label id="icon" pos="15 0" z-index="1000" size="5 5" text="🌐" halign="center" valign="center" textsize="2" textemboss="1" />
+  <label id="title" pos="10 0" z-index="1000" text="Map Info" halign="right" valign="center2" textsize="3" scale="0.875" textemboss="1" textfont="OswaldMono" />
+</framemodel>
+
+<script>
+    <!--
+  #Const C_SelectColor <0.019, 1., 0.59>  
+  
+  declare CMlFrame FrameCurrentMapInfo;
+  declare CMlFrame FrameMapTimes;
+  declare CMlFrame FrameButtonList;
+  declare CMlFrame[Integer] ButtonFrames;
+  declare CMlQuad Quad_SwitchToButtons;
+  
+  Void InitFrames()
+  {
+    foreach (i => frame in ButtonFrames)
+    {
+      declare button for frame <=> (frame.GetFirstChild("button") as CMlQuad);
+      declare quad_focus for frame <=> (frame.GetFirstChild("focus") as CMlQuad);
+      declare icon for frame <=> (frame.GetFirstChild("icon") as CMlLabel);
+      declare title for frame <=> (frame.GetFirstChild("title") as CMlLabel);
+      declare parentFrame for button <=> frame;
+      
+      if (i == 0)
+      {
+        icon.SetText("");
+        title.SetText("Map Info");
+      }
+      if (i == 1)
+      {
+        icon.SetText("");
+        title.SetText("PlayList");
+      }
+      if (i == 2)
+      {
+        icon.SetText("");
+        title.SetText("Mania-Exchange");
+      }
+    }
+  }
+    
+  main()
+  {
+    Quad_SwitchToButtons <=> (Page.GetFirstChild("quad_switchtobuttons") as CMlQuad);
+  
+    FrameCurrentMapInfo <=> (Page.GetFirstChild("frame_currentmapinfo") as CMlFrame);
+    FrameMapTimes <=> (Page.GetFirstChild("frame_maptimes") as CMlFrame);
+    FrameButtonList <=> (Page.GetFirstChild("frame_buttonlist") as CMlFrame);
+    ButtonFrames =
+    [
+    0 => (Page.GetFirstChild("morecurrentmapinfo") as CMlFrame),
+    1 => (Page.GetFirstChild("showplaylist") as CMlFrame),
+    2 => (Page.GetFirstChild("showmx") as CMlFrame)
+    ];
+    
+    InitFrames();
+    
+    declare LabelMapName <=> (Page.GetFirstChild("label_mapname") as CMlLabel);
+    declare LabelMapAuthor <=> (Page.GetFirstChild("label_mapauthor") as CMlLabel);
+    
+    declare MNC_ScoresTableVisible for LocalUser = False;
+    declare MNC_MapInfo_SelectedWindow for LocalUser = 0;
+    declare MNC_MapInfo_SelectedUId for LocalUser = "";
+    declare ShowButtons = False;
+    
+    declare backgroundfocus <=> (Page.GetFirstChild("backgroundfocus") as CMlQuad);
+    
+    while(True)
+    {      
+    
+      if (backgroundfocus.Opacity >= 0.)
+        backgroundfocus.Opacity -= 0.001;
+    
+      declare SwapInterface = MNC_ScoresTableVisible;
+    
+      FrameCurrentMapInfo.Visible = !SwapInterface && !ShowButtons;
+      FrameMapTimes.Visible = SwapInterface && !ShowButtons;
+      FrameButtonList.Visible = ShowButtons;
+      
+      LabelMapName.SetText(Playground.Map.MapName);
+      LabelMapAuthor.SetText(Playground.Map.AuthorNickName);
+      
+      foreach (frame in ButtonFrames)
+      {
+        declare button for frame <=> (frame.GetFirstChild("button") as CMlQuad);
+        declare quad_focus for frame <=> (frame.GetFirstChild("focus") as CMlQuad);
+        declare icon for frame <=> (frame.GetFirstChild("icon") as CMlLabel);
+        declare title for frame <=> (frame.GetFirstChild("title") as CMlLabel);      
+        
+        if (button.IsFocused)
+        {
+          icon.TextColor = C_SelectColor;
+          quad_focus.Opacity = 1.;
+          title.TextColor = C_SelectColor;
+        }
+        else
+        {
+          icon.TextColor = <1., 1., 1.>;
+          quad_focus.Opacity = 0.;
+          title.TextColor = <1., 1., 1.>;        
+        }
+      }
+      
+      foreach (event in PendingEvents)
+      {
+        if (event.Type == CMlScriptEvent::Type::MouseOver)
+        {
+          ShowButtons = True;
+        }
+        else if (event.Type == CMlScriptEvent::Type::MouseOut)
+        {
+          ShowButtons = False;
+        }
+        else if (event.Type == CMlScriptEvent::Type::MouseClick)
+        {
+          declare CMlFrame parentFrame for event.Control;
+          if (parentFrame != Null && ButtonFrames.exists(parentFrame))
+          {
+            declare index = ButtonFrames.keyof(parentFrame);
+            if (index == 0)
+            {
+              MNC_MapInfo_SelectedWindow = 1;
+              MNC_MapInfo_SelectedUId = Playground.Map.MapInfo.MapUid;
+              TriggerPageAction("mnc_mapinfo|selectmapuid|" ^ Playground.Map.MapInfo.MapUid);
+            }
+            if (index == 1)
+              MNC_MapInfo_SelectedWindow = 2;
+            if (index == 2)
+              MNC_MapInfo_SelectedWindow = 3;
+          }
+        }
+      }
+      
+      yield;
+    }
+  }
+--></script>

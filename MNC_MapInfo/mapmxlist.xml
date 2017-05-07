@@ -1,0 +1,98 @@
+﻿<dico>
+  <language id="en">
+    <welcomemx>Welcome to ManiaExchange!</welcomemx>
+  </language>
+  <language id="fr">
+    <welcomemx>Bienvenue sur ManiaExchange!</welcomemx>
+  </language>
+</dico>
+
+<frame id="main" z-index="2000">
+  <frame id="welcome">
+    <quad pos="0 30" z-index="0" size="35 35" image="https://mania-exchange.com/Content/images/planet_mx_logo.png" bgcolor="000000FF" halign="center" valign="center" />
+    <label pos="0 10" z-index="1" textid="welcomemx" textfont="file://Media/Font/BiryaniDemiBold.Font.gbx" halign="center" valign="center"/>
+    <frame scale="1.5">
+      <frameinstance pos="0 0" modelid="focusbutton" id="frame_search"/>
+      <frameinstance pos="0 -7.5" modelid="focusbutton" id="frame_lastmaps"/>
+      <frameinstance pos="0 -15" modelid="focusbutton" id="frame_currmapinfo"/>
+      <frameinstance pos="0 -22.5" modelid="focusbutton" id="frame_settings"/>
+    </frame>
+  </frame>
+</frame>
+
+<framemodel id="focusbutton">
+  <quad  id="button" size="40 5" z-index="500" style="Bgs1" substyle="BgDialogBlur" halign="center" valign="center" scriptevents="1" />
+  <quad  id="focus" size="40 5" z-index="500" style="Bgs1" substyle="BgDialogBlur" halign="center" valign="center" />
+  <label id="icon" pos="15 0" z-index="1000" size="5 5" text="🌐" halign="center" valign="center" textsize="2" textemboss="1" />
+  <label id="title" pos="10 0" z-index="1000" text="Map Info" halign="right" valign="center2" textsize="3" scale="0.875" textemboss="1" textfont="OswaldMono" />
+</framemodel>
+
+<script>
+    <!--
+  #Const C_SelectColor <0.019, 1., 0.59>  
+  
+  declare CMlFrame MainFrame;
+  declare CMlFrame FrameCurrentMapInfo;
+  declare CMlFrame FrameMapTimes;
+  declare CMlFrame FrameButtonList;
+  declare CMlFrame[Integer] ButtonFrames;
+  declare CMlQuad Quad_SwitchToButtons;
+ 
+  Void InitFrames()
+  {
+    foreach (i => frame in ButtonFrames)
+    {
+      declare button for frame <=> (frame.GetFirstChild("button") as CMlQuad);
+      declare quad_focus for frame <=> (frame.GetFirstChild("focus") as CMlQuad);
+      declare icon for frame <=> (frame.GetFirstChild("icon") as CMlLabel);
+      declare title for frame <=> (frame.GetFirstChild("title") as CMlLabel);
+      declare parentFrame for button <=> frame;
+      
+      if (i == 0)
+      {
+        icon.SetText("🔍");
+        title.SetText(_("Search"));
+      }
+      if (i == 1)
+      {
+        icon.SetText("");
+        title.SetText("Last Maps");
+      }
+      if (i == 2)
+      {
+        icon.SetText("");
+        title.SetText(_("Current Map"));
+      }
+      if (i == 3)
+      {
+        icon.SetText("🔧");
+        title.SetText(_("Settings"));
+      }
+    }
+  }
+    
+  main()
+  {
+    MainFrame <=> (Page.GetFirstChild("main") as CMlFrame);
+    declare MNC_MapInfo_SelectedWindow for LocalUser = 0;
+    MainFrame.Visible = MNC_MapInfo_SelectedWindow == 3;  
+    
+    ButtonFrames =
+    [
+      0 => (Page.GetFirstChild("frame_search") as CMlFrame),
+      1 => (Page.GetFirstChild("frame_lastmaps") as CMlFrame),
+      2 => (Page.GetFirstChild("frame_currmapinfo") as CMlFrame),
+      3 => (Page.GetFirstChild("frame_settings") as CMlFrame)
+    ];
+
+    InitFrames();
+
+    while(True)
+    {      
+      MainFrame.Visible = MNC_MapInfo_SelectedWindow == 3;  
+    
+    
+      yield;
+    }
+  }
+--></script>
