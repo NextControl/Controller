@@ -19,12 +19,8 @@ namespace ManiaNextControl.DefaultPlugins
     {
         void OnGettingMapInformation(CServerConnection con, CMap map)
         {
-            /*GS_LoadedMaps._server = con;
-            GS_MapCount._server = con;*/
-            GS_MapCount._wPlayers = GS_LoadedMaps._wPlayers = con.Players.Values.ToList();
-
-            GS_LoadedMaps.SetNow(con.MapList.Where(m => m.Value.LoadingState == HalfClass.CurrentState.AllInfoFilled).Count());
-            GS_MapCount.SetNow(con.MapList.Count);
+            GS_LoadedMaps.SetNowForServers(con.MapList.Where(m => m.Value.LoadingState == HalfClass.CurrentState.AllInfoFilled).Count(), con);
+            GS_MapCount.SetNowForServers(con.MapList.Count, con);
 
             CDebug.Log("Received informations for " + map.Name);
         }

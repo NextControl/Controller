@@ -19,6 +19,8 @@ namespace ManiaNextControl.DefaultPlugins
     {
         public async void ApplyManialinksToPlayer(string serverLogin, params CPlayer[] players)
         {
+            var server = CManiaNextControl.XmlRPC_Clients[serverLogin];
+
             foreach (var player in players)
             {
                 await Task.Factory.StartNew(() =>
@@ -37,7 +39,7 @@ namespace ManiaNextControl.DefaultPlugins
             var gc_Dico = new Dictionary<int, Dictionary<string, string>>();
 
             int i = 0;
-            foreach (var map in CManiaNextControl.XmlRPC_Clients[serverLogin].MapList.Values)
+            foreach (var map in server.MapList.Values)
             {
                 var dico = gc_Dico[i] = new Dictionary<string, string>();
                 dico["UId"] = map.UId;
@@ -46,13 +48,9 @@ namespace ManiaNextControl.DefaultPlugins
                 i++;
             }
 
-            GS_Maps._all = true;
-            GS_Maps._wPlayers = players.ToList();
-            GS_Maps.Set(gc_Dico);
-
-            GS_RefreshMapList._all = true;
-            GS_RefreshMapList._wPlayers = GS_Maps._wPlayers;
-            GS_RefreshMapList.Set(true);
+            GS_MapCount.SetNowForPlayers(server.MapList.Where(m => m.Value.LoadingState == HalfClass.CurrentState.AllInfoFilled).Count(), players);
+            GS_Maps.SetNowForPlayers(gc_Dico, players);
+            GS_RefreshMapList.SetNowForPlayers(true, players);
         }
     }
 }

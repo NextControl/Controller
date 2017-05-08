@@ -37,12 +37,13 @@ namespace ManiaNextControl.DefaultPlugins
                         var map = server.MapList[mapUid];
                         var gc_Dico = map.GetStringHashtable();
 
-                        GS_MapInfo._wPlayers = new List<CPlayer>() { await CPlayer.GetPlayerFromLogin(Login, new[] { server }) };
-                        GS_MapInfo.Set(gc_Dico);
+                        GS_MapInfo.SetNowForPlayers(gc_Dico, await CPlayer.GetPlayerFromLogin(Login, new[] { server }));
+
+                        gc_Dico.Clear();
                     }
                     else
                     {
-                        GS_MapInfo.Set(mapinfoError);
+                        GS_MapInfo.SetNowForPlayers(mapinfoError, await CPlayer.GetPlayerFromLogin(Login, new[] { server }));
                     }
                 }
                 if (splitMessage[1] == "juke")

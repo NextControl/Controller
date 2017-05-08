@@ -256,10 +256,13 @@ main() {"{"} {scriptContent} {"}"}
 ";
 
             CManialink manialink = new CManialink(content, null) { hasCorrectId = true, hasCorrectName = true };
-            if (setter.Server == null)
+            if (setter.Servers == null
+                || setter.Servers.Count() == 0)
                 manialink.Send(null, 100, setter.Players);
             else
-                manialink.Send(new[] { setter.Server.Manager }, 100, setter.Players);
+            {
+                manialink.Send(setter.Servers.Select(s => s.Manager).ToArray(), 100, setter.Players);
+            }
         }
 
         internal static void Loop()
@@ -329,7 +332,7 @@ main() {"{"} {scriptContent} {"}"}
             public CPlayer[] Players;
             public object Value;
 
-            public CServerConnection Server;
+            public CServerConnection[] Servers;
 
             #endregion Public Fields
 
@@ -420,10 +423,7 @@ main() {"{"} {scriptContent} {"}"}
 
             #region Private Fields
 
-            public bool _all;
             public T _currValue;
-            public List<CPlayer> _wPlayers = new List<CPlayer>();
-            public CServerConnection _server;
 
             #endregion Private Fields
 
@@ -442,10 +442,10 @@ main() {"{"} {scriptContent} {"}"}
             // TODO : CManialink.Getter
             public async Task<T> Get()
             {
-                if (_wPlayers.Count() == 1)
+                /*if (_wPlayers.Count() == 1)
                 {
                     _currValue = await GetFromPlayer(_wPlayers[0]);
-                }
+                }*/
                 return _currValue;
             }
 
@@ -455,70 +455,49 @@ main() {"{"} {scriptContent} {"}"}
                 return default(T);
             }
 
-            public T Set(T value)
+            /// <summary>
+            /// Variables will be send every 0.1 ms
+            /// </summary>
+            /// <param name="value"></param>
+            /// <param name="pls"></param>
+            public void SetForPlayers(T value, params CPlayer[] pls)
             {
-                _currValue = value;
-
-                if (!_all)
-                {
-                    if (_wPlayers.Count() > 0)
-                    {
-                        SetForPlayer(value, _wPlayers.ToArray());
-                    }
-                }
-                else
-                {
-                    SetForPlayer(value);
-                }
-                return _currValue;
+                CManialink.Setters.Add(new CNCGetterSetter() { Value = value, Players = pls, varName = varName, varPrefix = varPrefix });
             }
 
-            public string[] SendEvent(string[] value)
+            /// <summary>
+            /// Variables will be send every 0.1
+            /// </summary>
+            /// <param name="value"></param>
+            /// <param name="srvs"></param>
+            public void SetForServers(T value, params CServerConnection[] srvs)
             {
-                if (!_all)
-                {
-                    if (_wPlayers.Count() > 0)
-                    {
-                        SendEventForPlayer(value, _wPlayers.ToArray());
-                    }
-                }
-                else
-                {
-                    SendEventForPlayer(value);
-                }
-                return value;
+                CManialink.Setters.Add(new CNCGetterSetter() { Value = value, Servers = srvs, varName = varName, varPrefix = varPrefix });
             }
 
-            public T SetNow(T value)
+            /// <summary>
+            /// Variable will be sent instantly to the players
+            /// </summary>
+            /// <param name="value"></param>
+            /// <param name="pls"></param>
+            public void SetNowForPlayers(T value, params CPlayer[] pls)
             {
-                _currValue = value;
-                if (!_all)
-                {
-                    if (_wPlayers.Count() > 0)
-                    {
-                        SetForPlayerNow(value, _wPlayers.ToArray());
-                    }
-                }
-                else
-                {
-                    SetForPlayerNow(value);
-                }
-                return _currValue;
+                CManialink.Set_SendNow(new CNCGetterSetter() { Value = value, Players = pls, varName = varName, varPrefix = varPrefix });
             }
 
-            public void SetForPlayer(T value, params CPlayer[] pls)
+            /// <summary>
+            /// Variable will be sent instantly to the servers
+            /// </summary>
+            /// <param name="value"></param>
+            /// <param name="pls"></param>
+            public void SetNowForServers(T value, params CServerConnection[] srvs)
             {
-                CManialink.Setters.Add(new CNCGetterSetter() { Value = value, Server = _server, Players = pls, varName = varName, varPrefix = varPrefix });
+                CManialink.Set_SendNow(new CNCGetterSetter() { Value = value, Servers = srvs, varName = varName, varPrefix = varPrefix });
             }
 
-            public void SetForPlayerNow(T value, params CPlayer[] pls)
+            public void SendEventForPlayers(string[] values, params CPlayer[] pls)
             {
-                CManialink.Set_SendNow(new CNCGetterSetter() { Value = value, Server = _server, Players = pls, varName = varName, varPrefix = varPrefix });
-            }
-
-            public void SendEventForPlayer(string[] values, params CPlayer[] pls)
-            {
-                CManialink.Events.Add(new CNCEvent() { Data = values, Server = _server, Players = pls, varName = varName, varPrefix = varPrefix });
+                CManialink.Events.Add(new CNCEvent() { Data = values, Players = pls, varName = varName, varPrefix = varPrefix });
             }
 
             #endregion Public Methods
