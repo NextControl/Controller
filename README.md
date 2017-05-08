@@ -8,6 +8,8 @@
 ___
 - Totally asynchronous.
 - Plugin roles and services (More informations)
+- Transport layer for variables and events (manialinks)
+
 
 ## Get started
 ___
