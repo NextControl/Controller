@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using static ManiaNextControl.Manialink.CManialink;
 using ManiaplanetXMLRPC.Connector;
+using System.Threading.Tasks;
 
 namespace ManiaNextControl.DefaultPlugins
 {
@@ -38,9 +39,9 @@ namespace ManiaNextControl.DefaultPlugins
 
         public Dictionary<string, string> mapinfoError { get; private set; }
 
-        public override async void Init()
+        public override async Task Init()
         {
-            base.Init();
+            await base.Init();
 
             mapinfoError = new Dictionary<string, string>()
             {
@@ -78,15 +79,17 @@ namespace ManiaNextControl.DefaultPlugins
                 .SetVersion(3);
         }
 
-        public override void OnServerAdded(string serverLogin)
+        public override Task OnServerAdded(string serverLogin)
         {
             CDebug.Log(serverLogin + " added!");
 
             CManiaNextControl.XmlRPC_Clients[serverLogin].RegisterListener<ManiaPlanetCallbacks.PlayerManialinkPageAnswer>(this);
             CManiaNextControl.Events.OnGettingMapInformation += OnGettingMapInformation;
+
+            return Task.CompletedTask;
         }
 
-        public override async void OnServerLoaded(string serverLogin)
+        public override async Task OnServerLoaded(string serverLogin)
         {
             CDebug.Log(serverLogin + " was loaded!");
 

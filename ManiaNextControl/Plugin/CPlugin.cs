@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 using static ManiaNextControl.Manialink.CManialink;
 
 namespace ManiaNextControl.Plugin
@@ -13,7 +14,7 @@ namespace ManiaNextControl.Plugin
         public CFileIO FileIO;
         public Assembly RunningAssembly => GetType().GetTypeInfo().Assembly;
 
-        public virtual void Init()
+        public virtual Task Init()
         {
             FileIO = new CFileIO();
             FileIO.pathFolder = RunningAssembly.Location.Replace(RunningAssembly.GetName().Name + ".dll", "");
@@ -30,9 +31,11 @@ namespace ManiaNextControl.Plugin
                     field.SetValue(this, newObj);
                 }
             }
+
+            return Task.CompletedTask;
         }
 
-        public virtual void OnServerAdded(string login) { }
-        public virtual void OnServerLoaded(string login) { }
+        public virtual Task OnServerAdded(string login) { return Task.CompletedTask; }
+        public virtual Task OnServerLoaded(string login) { return Task.CompletedTask; }
     }
 }
