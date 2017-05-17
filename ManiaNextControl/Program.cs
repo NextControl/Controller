@@ -61,6 +61,7 @@ class CProgramMNC
     {
         ForceCulture();
         await ReloadAllConfigs();
+        LoadAllServices();
         LoadAllPlugins();
     }
 
@@ -115,6 +116,22 @@ class CProgramMNC
 
                     CManiaNextControl.ServersConfig[serverLogin] = config;
                 }
+            }
+        }
+    }
+
+    static async void LoadAllServices()
+    {
+        string service_folder = CManiaNextControl.RunningPath + "services";
+
+        if (!Directory.Exists(service_folder))
+            Directory.CreateDirectory(service_folder);
+
+        foreach (var file in Directory.GetFiles(service_folder))
+        {
+            if (file.EndsWith(".mncplugin"))
+            {
+                await CManiaNextControl.LoadPlugins(File.ReadAllText(file));
             }
         }
     }

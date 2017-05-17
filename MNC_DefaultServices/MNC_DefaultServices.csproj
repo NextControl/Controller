@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <ApplicationIcon />
+    <OutputTypeEx>library</OutputTypeEx>
+    <StartupObject />
+    <PostBuildEvent>xcopy "*.*" "C:\Users\Guerro\documents\visual studio 2017\Projects\ManiaNextControl\MNC-Next\ManiaNextControl\bin\Debug\netcoreapp1.1\services\MNC_DefaultServices" /Y /I /E</PostBuildEvent>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ManiaNextControl\ManiaNextControl.csproj" />
+  </ItemGroup>
+
+</Project>

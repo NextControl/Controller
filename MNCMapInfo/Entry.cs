@@ -15,7 +15,8 @@ namespace ManiaNextControl.DefaultPlugins
 {
     public partial class MapInfo : CRolePlugin,
         ManiaPlanetCallbacks.PlayerManialinkPageAnswer,
-        ManiaPlanetCallbacks.PlayerConnect
+        ManiaPlanetCallbacks.PlayerConnect,
+        ManiaPlanetCallbacks.PlayerChat
     {
         CManialink Manialink_MapInfo;
         CManialink Manialink_MapList;
@@ -84,6 +85,7 @@ namespace ManiaNextControl.DefaultPlugins
             CDebug.Log(serverLogin + " added!");
 
             CManiaNextControl.XmlRPC_Clients[serverLogin].RegisterListener<ManiaPlanetCallbacks.PlayerManialinkPageAnswer>(this);
+            CManiaNextControl.XmlRPC_Clients[serverLogin].RegisterListener<ManiaPlanetCallbacks.PlayerChat>(this);
             CManiaNextControl.Events.OnGettingMapInformation += OnGettingMapInformation;
 
             return Task.CompletedTask;

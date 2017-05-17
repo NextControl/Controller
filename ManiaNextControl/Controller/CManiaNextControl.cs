@@ -3,6 +3,7 @@ using ManiaNextControl.Config;
 using ManiaNextControl.Debug;
 using ManiaNextControl.Network;
 using ManiaNextControl.Plugin;
+using ManiaNextControl.Services;
 using ManiaplanetXMLRPC.Callbacks;
 using ManiaplanetXMLRPC.Connector;
 using ManiaplanetXMLRPC.Connector.Gbx;
@@ -28,6 +29,10 @@ namespace ManiaNextControl.Controller
 
         public static Dictionary<string, CServerConnection> XmlRPC_Clients { get; internal set; } = new Dictionary<string, CServerConnection>();
         public static List<CPlugin> Plugins { get; internal set; } = new List<CPlugin>();
+        public static Dictionary<string, CService> GlobalServices { get; internal set; } = new Dictionary<string, CService>();
+
+        internal static List<Type> servicesTypeFound = new List<Type>();
+        internal static Dictionary<Type, CXmlPluginInformation> servicesInformation = new Dictionary<Type, CXmlPluginInformation>();
 
         public static string RunningPath
             => Assembly.GetEntryAssembly().Location
@@ -47,8 +52,19 @@ namespace ManiaNextControl.Controller
                 }
             }
 
+            for (int i = 0; i < servicesTypeFound.Count; i++)
+            {
+                var value = servicesTypeFound[i];
+                if (value.GetInterfaces().Contains(typeof(IServiceServer))
+                    && value.GetInterfaces().Contains(typeof(IServiceStartAutomatically)))
+                {
+                    var s = client.ServerServices[value] = Activator.CreateInstance(value) as CService;
+                    ((IServiceServer)s).Service_ServerConnection = client;
+                    await ((IServiceServer)s).ServerAdded();
+                }
+            }
             for (int i = 0; i < Plugins.Count; i++)
-                Plugins[i].OnServerAdded(serverConfig.ServerLogin);
+                await Plugins[i].OnServerAdded(serverConfig.ServerLogin);
         }
 
         public static async Task InitServer(string serverLogin)
@@ -63,8 +79,14 @@ namespace ManiaNextControl.Controller
             await client.Manager.AsyncSendCall(GbxParam.Create("ChatSendServerMessage", "The controller successfuly made a link to this server!"));
             await client.Refresh();
 
+            client.IsLoaded = true;
+
+            foreach (var service in client.ServerServices)
+            {
+                await ((IServiceServer)service.Value).ServerLoaded();
+            }
             for (int i = 0; i < Plugins.Count; i++)
-                Plugins[i].OnServerLoaded(client.ServerInfo.Login);
+                await Plugins[i].OnServerLoaded(client.ServerInfo.Login);
 
             await client.ApplyFullInformationsToMaps();
         }
@@ -74,21 +96,74 @@ namespace ManiaNextControl.Controller
             var doc = new XmlDocument();
             doc.LoadXml(xmlText);
 
-            string entryPluginPath = string.Empty;
-            foreach (XmlElement element in doc)
+            var pluginsInformation = new List<CXmlPluginInformation>();
+            foreach (XmlElement entryList in doc.GetElementsByTagName("*"))
             {
-                if (element.Name.ToLower() == "entry")
-                    entryPluginPath = element.InnerText;
+                if (entryList.Name.ToLower() == "plugin"
+                    || entryList.Name.ToLower() == "service")
+                {
+                    CXmlPluginInformation conf = new CXmlPluginInformation();
+                    foreach (XmlElement element in entryList)
+                    {
+                        if (element.Name.ToLower() == "entry")
+                            conf.entryPath = element.InnerText;
+                        if (element.Name.ToLower() == "serviceclassname")
+                            conf.className = element.InnerText;
+                        if (element.Name.ToLower() == "isservice"
+                            && (element.InnerText.ToLower() == "true"
+                            || element.InnerText.ToLower() == "1"))
+                            conf.isService = true;
+                        if (element.Name.ToLower() == "servicetype")
+                            conf.serviceType = element.InnerText;
+                    }
+
+                    pluginsInformation.Add(conf);
+                }
             }
 
-            var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(RunningPath + "plugins/" + entryPluginPath);
-            var pluginsType = assembly.GetTypes().Where(t => typeof(CPlugin).IsAssignableFrom(t));
-            foreach (var pluginType in pluginsType)
+            var alreadyLoadedAssemblies = new Dictionary<string, Assembly>();
+            foreach (var pluginInfo in pluginsInformation)
             {
-                var pl = Activator.CreateInstance(pluginType) as CPlugin;
-                pl.Init();
+                if (!alreadyLoadedAssemblies.TryGetValue($"{(pluginInfo.isService ? "s" : "p")}" + pluginInfo.entryPath, out var assembly))
+                    assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(RunningPath + $"{(pluginInfo.isService ? "services" : "plugins")}/" + pluginInfo.entryPath);
+                alreadyLoadedAssemblies[$"{(pluginInfo.isService ? "s" : "p")}" + pluginInfo.entryPath] = assembly;
 
-                Plugins.Add(pl);
+                if (!pluginInfo.isService)
+                {
+                    var pluginTypes = assembly.GetTypes().Where(t => typeof(CPlugin).IsAssignableFrom(t));
+                    foreach (var pluginType in pluginTypes)
+                    {
+                        var pl = Activator.CreateInstance(pluginType) as CPlugin;
+                        await pl.Init();
+
+                        Plugins.Add(pl);
+                    }
+                }
+                else
+                {
+                    if (GlobalServices.ContainsKey(pluginInfo.serviceType))
+                    {
+                        throw new DoubleServiceTypeException();
+                    }
+
+                    var serviceTypes = assembly.GetTypes().Where(t => typeof(CService).IsAssignableFrom(t) && t.Name == pluginInfo.className);
+                    foreach (var serviceType in serviceTypes)
+                    {
+                        if (serviceType.GetInterfaces().Contains(typeof(IServiceStartAutomatically)))
+                        {
+                            if (serviceType.GetInterfaces().Contains(typeof(IServiceGlobalSingleton)))
+                            {
+                                var s = Activator.CreateInstance(serviceType) as IServiceGlobalSingleton;
+                                await s.ControllerLoad();
+
+                                GlobalServices[pluginInfo.serviceType] = s as CService;
+                            }
+                        }
+
+                        servicesTypeFound.Add(serviceType);
+                        servicesInformation[serviceType] = pluginInfo;
+                    }
+                }
             }
         }
     }

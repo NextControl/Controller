@@ -8,7 +8,7 @@ using static ManiaNextControl.Manialink.CManialink;
 
 namespace ManiaNextControl.Plugin
 {
-    public class CPlugin
+    public class CPlugin : CNextAssembly
     {
         public string manialinkPrefix => GetType().FullName.Replace(".", "_").Replace(" ", "").Replace("-", "");
         public CFileIO FileIO;

@@ -1,4 +1,5 @@
 ﻿using ManiaNextControl.Classes;
+using ManiaNextControl.Services;
 using ManiaplanetXMLRPC.Attributes;
 using ManiaplanetXMLRPC.Connector;
 using ManiaplanetXMLRPC.Connector.Gbx;
@@ -22,29 +23,53 @@ namespace ManiaNextControl.Network
                 case Code_PlayerConnect:
                     {
                         var player = await CPlayer.GetPlayerFromLogin((string)op[0], new[] { this }, false);
+                        player.LoadingState = HalfClass.CurrentState.PrimaryInfoFilled;
+
+                        CPlayer.AllPlayers[player.User.Login] = player;
+
+                        // Get detailed info
+                        var call = await Manager.AsyncSendCall(GbxParam.Create("GetDetailedPlayerInfo", player.User.Login));
+
+                        var dicoDetail = (Dictionary<string, object>)call.Parameters[0];
+                        player.User = new CUser();
+                        player.User.IPAddress = (string)dicoDetail["IPAddress"];
+                        player.User.DownloadRate = (int)dicoDetail["DownloadRate"];
+                        player.User.UploadRate = (int)dicoDetail["UploadRate"];
+                        player.User.Language = (string)dicoDetail["Language"];
+
+                        player.User.Player = player;
+
+                        player.LoadingState = HalfClass.CurrentState.AllInfoFilled;
 
                         await ApplyInterfaceHelpers(player);
                         player.LoadingState = HalfClass.CurrentState.AllInfoFilled;
                         player.ControllerLoaded = true;
 
-                        await Manager.AsyncSendCall(GbxParam.Create("ChatSend", $"hello {player.User.Login}!"));
+                        await Manager.AsyncSendCall(GbxParam.Create("ChatSendServerMessage", $"$0f0$555⏵ $fffWelcome $<{player.NickName}$z$s$> $fffto the server!"));
 
                         TriggerListeners<PlayerConnect>(this, o => o.Callback(this, (string)op[0], (bool)op[1]));
                         break;
                     }
 
                 case Code_PlayerDisconnect:
-                    TriggerListeners<PlayerDisconnect>(this, o => o.Callback(this, (string)op[0], (string)op[1]));
-                    break;
+                    {
+                        CPlayer.AllPlayers.TryGetValue((string)op[0], out var player);
+                        await Manager.AsyncSendCall(GbxParam.Create("ChatSendServerMessage", $"$0f0$555⏵ $fffBye bye $<{(player == null || player.NickName == null ? (string)op[0] : player.NickName)}$z$s$> $fff:("));
 
+                        TriggerListeners<PlayerDisconnect>(this, o => o.Callback(this, (string)op[0], (string)op[1]));
+                        break;
+                    }
                 case Code_PlayerChat:
                     if (op.Length == 4)
                         TriggerListeners<PlayerChat>(this, o => o.Callback(this, (int)op[0], (string)op[1], (string)op[2], (bool)op[3]));
                     break;
 
                 case Code_BeginMap:
+                    var smap = SMapInfo.Convert((Dictionary<string, object>)op[0]);
+                    await RefreshMapCompletely(smap.UId, smap.FileName);
+
                     if (op.Length == 1)
-                        TriggerListeners<BeginMap>(this, o => o.Callback(this, SMapInfo.Convert((Dictionary<string, object>)op[0])));
+                        TriggerListeners<BeginMap>(this, o => o.Callback(this, smap));
                     break;
 
                 case Code_EndMap:

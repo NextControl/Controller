@@ -41,8 +41,8 @@ namespace ManiaNextControl.Classes
                 retry:
                 {
                     var serversToSearch = searcherHelper;
-                    if (serversToSearch == null
-                        || serversToSearch.Length == 0
+                    if ((serversToSearch == null
+                        || serversToSearch.Length == 0)
                         && allowToSearchOnOtherServers)
                         serversToSearch = CManiaNextControl.XmlRPC_Clients.Values.ToArray();
                     foreach (var server in serversToSearch)

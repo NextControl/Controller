@@ -5,7 +5,7 @@ using ManiaNextControl.Classes;
 
 namespace ManiaNextControl.Services
 {
-    public class CManiaExchangeService : COnlineMapBrowser
+    public class MNCManiaExchange : COnlineMapBrowser
     {
         public class CMX_Map : COnlineMap
         {

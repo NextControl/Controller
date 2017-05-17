@@ -60,8 +60,9 @@ namespace ManiaplanetXMLRPC.Connector.Gbx
             StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" ?><methodCall><methodName>" + eventName + "</methodName><params>");
             foreach (var obj in gbx.Parameters)
             {
-                // Initialize
-                Console.WriteLine(obj.GetType());
+                if (obj == null)
+                    continue;
+
                 xml.Append("<param>" + ParseObject(obj) + "</param>\n");
             }
             xml.Append("</params></methodCall>");
@@ -98,12 +99,21 @@ namespace ManiaplanetXMLRPC.Connector.Gbx
             }
             else if (obj.GetType().IsArray)
             {
-                xml += "<array><data>";
-                foreach (object element in ((Array)obj))
+                if (obj.GetType() == typeof(byte[])) // parse type of byte[] into base64
                 {
-                    xml += ParseObject(element);
+                    xml += "<base64>";
+                    xml += Convert.ToBase64String((byte[])obj);
+                    xml += "</base64>";
                 }
-                xml += "</data></array>";
+                else
+                {
+                    xml += "<array><data>";
+                    foreach (object element in ((Array)obj))
+                    {
+                        xml += ParseObject(element);
+                    }
+                    xml += "</data></array>";
+                }
             }
             else if (obj.GetType().GetInterfaces().Contains(typeof(IEnumerable))) // parse type array ...
             {
@@ -125,12 +135,6 @@ namespace ManiaplanetXMLRPC.Connector.Gbx
                     xml += "</member>";
                 }
                 xml += "</struct>";
-            }
-            else if (obj.GetType() == typeof(byte[])) // parse type of byte[] into base64
-            {
-                xml += "<base64>";
-                xml += Convert.ToBase64String((byte[])obj);
-                xml += "</base64>";
             }
 
             // close parameter ...
@@ -215,8 +219,6 @@ namespace ManiaplanetXMLRPC.Connector.Gbx
             gbx.Result = Encoding.UTF8.GetString(data);
             gbx.ErrorCode = 0;
             gbx.ErrorString = "";
-
-            Console.WriteLine(gbx.Result);
 
             var xmlDoc = new XmlDocument();
             xmlDoc.LoadXml(gbx.Result);

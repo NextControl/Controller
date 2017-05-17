@@ -51,7 +51,7 @@ namespace ManiaNextControl.DefaultPlugins
                     string mapUId = splitMessage[2];
 
                     if (server.MapList.ContainsKey(mapUId))
-                        await CJukeboxService.Add(server, server.MapList[mapUId]);
+                        await server.GetService<MNCJukebox>().Add(server.MapList[mapUId]);
                 }
             }
         }
@@ -61,6 +61,22 @@ namespace ManiaNextControl.DefaultPlugins
             var server = con as CServerConnection;
             var player = await CPlayer.GetPlayerFromLogin(Login, new[] { server }, true);
             ApplyManialinksToPlayer(server.ServerInfo.Login, player);
+        }
+
+        async void ManiaPlanetCallbacks.PlayerChat.Callback(Client con, int PlayerUid, string Login, string Text, bool IsRegistredCmd)
+        {
+            if (Text.StartsWith("/addmap "))
+            {
+                var url = Text.Replace("/addmap ", string.Empty);
+                try
+                {
+                    await COnlineMapBrowser.AddMapFromUrl((CServerConnection)con, url);
+                }
+                catch(Exception ex)
+                {
+                    CDebug.ErrorLog(ex.Message, con as CServerConnection);
+                }
+            }
         }
     }
 }

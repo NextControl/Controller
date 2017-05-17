@@ -89,7 +89,6 @@ namespace ManiaNextControl.Manialink
         public CManialink SetParameter(string parameterName, object newValue)
         {
             contents = contents.Replace("%" + parameterName, newValue.ToString());
-            Console.WriteLine(contents);
             return this;
         }
 
@@ -209,7 +208,7 @@ namespace ManiaNextControl.Manialink
             if (!hasCorrectName)
                 throw new IncorrectNameException("No name was put.");
 
-            if (players.Count() == 0)
+            if (players == null || players.Count() == 0)
             {
                 var sendToServers = servers;
                 if (sendToServers == null

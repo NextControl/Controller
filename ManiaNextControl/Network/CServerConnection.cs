@@ -12,17 +12,23 @@ using System.Text;
 using System.Threading.Tasks;
 using ManiaplanetXMLRPC.Attributes;
 using ManiaNextControl.Controller;
+using ManiaNextControl.Services;
+using System.Reflection;
 
 namespace ManiaNextControl.Network
 {
     public partial class CServerConnection : Client
     {
+        public Dictionary<Type, CService> ServerServices = new Dictionary<Type, CService>();
+
         public CServerConnectionEvents Events;
 
         public Dictionary<string, CMap> MapList = new Dictionary<string, CMap>();
         public Dictionary<string, CPlayer> Players
             => CPlayer.AllPlayers.Where(player => player.Value.Server == this)
                 .ToDictionary(k => k.Key, v => v.Value);
+
+        public bool IsLoaded = false;
 
         public CServerInfo ServerInfo;
 
@@ -121,8 +127,30 @@ namespace ManiaNextControl.Network
                 player.User.UploadRate = (int)dicoDetail["UploadRate"];
                 player.User.Language = (string)dicoDetail["Language"];
 
+                player.User.Player = player;
+
                 player.LoadingState = HalfClass.CurrentState.AllInfoFilled;
             }
+        }
+
+        public async Task RefreshMapCompletely(string uid, string filemapname)
+        {
+            MapList.TryGetValue(uid, out var map);
+            if (map == null)
+                map = new CMap()
+                {
+                    UId = uid,
+                    FileName = filemapname
+                };
+
+            var hashtable = (await Manager.AsyncSendCall(GbxParam.Create("GetMapInfo", map.FileName)))
+                .Parameters[0]
+                .TypeCast<Dictionary<string, object>>();
+
+            map.Convert(hashtable);
+            map.LoadingState = HalfClass.CurrentState.AllInfoFilled;
+
+            CManiaNextControl.Events.OnGettingMapInformation_Invoke(this, map);
         }
 
         public async Task RefreshMapList()
@@ -188,6 +216,47 @@ namespace ManiaNextControl.Network
             .SetID("visiblescorestable")
             .SetLayerType(CManialink.EUILayerType.ScoresTable)
             .Send(new[] { Manager }, 0, players);
+        }
+
+        public Service GetService<Service>()
+            where Service : CService
+        {
+            if (!typeof(Service).GetInterfaces().Contains(typeof(IServiceServer)))
+                return null;
+
+            if (ServerServices.ContainsKey(typeof(Service)))
+                return (Service)ServerServices[typeof(Service)];
+
+            if (typeof(Service).GetInterfaces().Contains(typeof(IServiceManualStart)))
+                return (Service)CService.Service_NeedToBeStartedManually;
+            else if (typeof(Service).GetInterfaces().Contains(typeof(IServiceStartOnDemand)))
+            {
+                var s = (IServiceServer)(ServerServices[typeof(Service)] = default(Service));
+                s.Service_ServerConnection = this;
+                s.ServerAdded();
+
+                if (IsLoaded)
+                    s.ServerLoaded();
+
+                return (Service)s;
+            }
+            else
+                return null;
+        }
+
+        public CService GetServiceByType(string type)
+        {
+            type = type.ToLower();
+
+            foreach (var kvp in CManiaNextControl.servicesInformation)
+            {
+                if (kvp.Value.serviceType.ToLower() == type)
+                {
+                    return (CService)GetType().GetMethod("GetService").MakeGenericMethod(kvp.Key).Invoke(this, null);
+                }
+            }
+
+            return null;
         }
     }
 }

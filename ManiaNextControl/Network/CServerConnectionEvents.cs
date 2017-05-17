@@ -41,5 +41,22 @@ namespace ManiaNextControl.Network
         {
             await con.Manager.AsyncSendCall(GbxParam.Create("Maniaplanet.UI.SetAltScoresTableVisibility", state));
         }
+
+        public async Task WriteFile(string filePath, string fileContent)
+        {
+            GbxParam sentGBX = GbxParam.Create("WriteFile", filePath, CodePagesEncodingProvider.Instance.GetEncoding(1252).GetBytes(fileContent));
+            var gbx = await con.Manager.AsyncSendCall(sentGBX);
+            if (gbx.isError)
+            {
+                await ChatSendServerMessage("$f00ERROR: " + gbx.ErrorString + " \nSent XML:\n");
+            }
+        }
+
+        public async Task InsertMap(string filePath)
+        {
+            var gbx = await con.Manager.AsyncSendCall(GbxParam.Create("InsertMap", filePath));
+            if (gbx.isError)
+                await ChatSendServerMessage("$f00ERROR: " + gbx.ErrorString);
+        }
     }
 }

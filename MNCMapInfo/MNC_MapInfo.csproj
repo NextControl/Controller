@@ -2,15 +2,16 @@
   <PropertyGroup>
     <AssemblyName>MNCMapInfo</AssemblyName>
     <OutputType>Library</OutputType>
-    <TargetFramework>netcoreapp1.0</TargetFramework>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
     <OutputTypeEx>library</OutputTypeEx>
-    <PostBuildEvent>xcopy "*.*" "C:\Users\Guerro\documents\visual studio 2017\Projects\ManiaNextControl\MNC-Next\ManiaNextControl\bin\Debug\netcoreapp1.0\plugins\MNC_MapInfo" /Y /I /E</PostBuildEvent>
+    <PostBuildEvent>xcopy "*.*" "C:\Users\Guerro\documents\visual studio 2017\Projects\ManiaNextControl\MNC-Next\ManiaNextControl\bin\Debug\netcoreapp1.1\plugins\MNC_MapInfo" /Y /I /E</PostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ManiaNextControl\ManiaNextControl.csproj" />
+    <ProjectReference Include="..\MNC_DefaultServices\MNC_DefaultServices.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="mapinfo.xml">
